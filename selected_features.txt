@@ -1,0 +1,10 @@
+CCI_score
+post_dm_acarbose_Yes
+post_htn_raas_Yes
+入院年龄
+post_dm_metformin_Yes
+纤维蛋白原
+葡萄糖
+尿素氮
+肌酸激酶
+渗透压
