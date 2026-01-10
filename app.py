@@ -121,34 +121,6 @@ st.markdown("""
     .year-4 { color: #f59e0b; border-top: 4px solid #f59e0b; }
     .risk-card { color: #1e3a5f; border-top: 4px solid #1e3a5f; }
     
-    /* 风险等级徽章 */
-    .risk-badge {
-        display: inline-block;
-        padding: 0.6rem 2rem;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin: 1rem 0;
-    }
-    
-    .risk-low {
-        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-        color: #166534;
-        border: 2px solid #86efac;
-    }
-    
-    .risk-medium {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        color: #92400e;
-        border: 2px solid #fcd34d;
-    }
-    
-    .risk-high {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        color: #991b1b;
-        border: 2px solid #fca5a5;
-    }
-    
     /* 分隔线 */
     .section-divider {
         height: 2px;
@@ -493,10 +465,10 @@ def main():
     # 加载模型
     model = load_model()
     feature_list = load_feature_list()
+    demo_mode = model is None
     
-    if model is None:
-        st.error("❌ **Error**: Model file not found. Please ensure `rsf_model.joblib` is in the app directory.")
-        st.stop()
+    if demo_mode:
+        st.warning("⚠️ **Demo Mode**: Model file not found. Please ensure `rsf_model.joblib` is in the app directory.")
     
     # ----------------------
     # 侧边栏输入
@@ -547,7 +519,21 @@ def main():
         input_df = input_df[feature_list]
         
         with st.spinner('Calculating...'):
-            risk_score, surv_func = predict_survival(model, input_df)
+            if demo_mode:
+                # 演示模式
+                risk_score = np.random.uniform(20, 80)
+                times = np.linspace(0, 5, 100)
+                base_rate = 0.15 + (risk_score / 100) * 0.3
+                surv_probs = np.exp(-base_rate * times)
+                
+                class MockSurvFunc:
+                    def __init__(self, x, y):
+                        self.x = x
+                        self.y = y
+                
+                surv_func = MockSurvFunc(times, surv_probs)
+            else:
+                risk_score, surv_func = predict_survival(model, input_df)
         
         # 计算 1-4 年生存率
         surv_1y = get_survival_probability(surv_func, 1)
@@ -605,33 +591,6 @@ def main():
                 <div class="card-year">4-Year</div>
                 <div class="card-value">{surv_4y:.1%}</div>
                 <div class="card-label">Survival Rate</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # ----------------------
-        # 风险等级
-        # ----------------------
-        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        
-        col_left, col_center, col_right = st.columns([1, 2, 1])
-        
-        with col_center:
-            if surv_1y >= 0.7:
-                risk_level = "Low Risk"
-                risk_class = "risk-low"
-                risk_icon = "✅"
-            elif surv_1y >= 0.4:
-                risk_level = "Moderate Risk"
-                risk_class = "risk-medium"
-                risk_icon = "⚠️"
-            else:
-                risk_level = "High Risk"
-                risk_class = "risk-high"
-                risk_icon = "🔴"
-            
-            st.markdown(f"""
-            <div style="text-align: center;">
-                <span class="risk-badge {risk_class}">{risk_icon} {risk_level}</span>
             </div>
             """, unsafe_allow_html=True)
         
