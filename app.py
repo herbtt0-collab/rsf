@@ -493,10 +493,10 @@ def main():
     # 加载模型
     model = load_model()
     feature_list = load_feature_list()
-    demo_mode = model is None
     
-    if demo_mode:
-        st.warning("⚠️ **Demo Mode**: Model file not found. Please ensure `rsf_model.joblib` is in the app directory.")
+    if model is None:
+        st.error("❌ **Error**: Model file not found. Please ensure `rsf_model.joblib` is in the app directory.")
+        st.stop()
     
     # ----------------------
     # 侧边栏输入
@@ -547,21 +547,7 @@ def main():
         input_df = input_df[feature_list]
         
         with st.spinner('Calculating...'):
-            if demo_mode:
-                # 演示模式
-                risk_score = np.random.uniform(20, 80)
-                times = np.linspace(0, 5, 100)
-                base_rate = 0.15 + (risk_score / 100) * 0.3
-                surv_probs = np.exp(-base_rate * times)
-                
-                class MockSurvFunc:
-                    def __init__(self, x, y):
-                        self.x = x
-                        self.y = y
-                
-                surv_func = MockSurvFunc(times, surv_probs)
-            else:
-                risk_score, surv_func = predict_survival(model, input_df)
+            risk_score, surv_func = predict_survival(model, input_df)
         
         # 计算 1-4 年生存率
         surv_1y = get_survival_probability(surv_func, 1)
